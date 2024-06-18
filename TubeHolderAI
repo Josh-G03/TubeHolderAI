@@ -1,0 +1,38 @@
+from solid2 import *
+from subprocess import run
+from re import sub
+
+def saveRenderScad(scad, out):
+    with open(out, 'w') as f:
+        f.write(scad)
+    run(["/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD", "-o", sub(r'\.scad$', '', out) + ".stl", out])
+
+boxWidth = 90
+boxHeight = 30
+numHoles = 8
+holeDiameter = 6.3
+holeSpacing = 3  # Explicit spacing between holes
+numSides = 100  # Increase this value for smoother cylinders
+
+# Base model with subtracted inner cube
+model = f"""
+$fn = {numSides};
+difference() {{
+    cube([{boxWidth}, 20, {boxHeight}]);
+    translate([5, -10, -1]) cube([{boxWidth - 10}, {boxWidth - 10}, 27]);
+"""
+
+# Calculate the total width of holes and spaces between them
+totalWidth = numHoles * holeDiameter + (numHoles - 1) * holeSpacing
+
+# Calculate the starting position to center the holes
+startPosX = (boxWidth - totalWidth) / 2
+
+# Create the holes
+for ii in range(numHoles):
+    xOffset = startPosX + ii * (holeDiameter + holeSpacing)  # Position each hole with specified spacing
+    model += f"translate([{xOffset + holeDiameter / 2}, 10, 0]) cylinder(h=75, d={holeDiameter});\n"
+
+model += "}"
+
+saveRenderScad(model, "TubeHolderAIGen.scad")
